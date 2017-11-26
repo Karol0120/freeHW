@@ -17,25 +17,23 @@ void main()
 
 	bool run = false; //zmienna okreœla stan czy ju¿ znaleziono Hauptwerk.exe wœród listy dzia³aj¹cych procesów
 	FILE *plik; //handler dla odczytu pliku ini
-	int zmienne[3] = { 0 }, x = 0, delay, x1, y1; //zmienne pomocnicze przy odczycie z pliku
+	int zmienne[2] = { 0 }, x = 0, x1, y1; //zmienne pomocnicze przy odczycie z pliku
 
 	fopen_s(&plik, "freehw_conf.ini", "r"); //czytanie pliku
 	if (plik == NULL) //jeœli nie ma pliku ini lub inny b³¹d
 	{
-		delay = 8000; //wtedy wczytujemy domyœlne wartoœci
 		x1 = 425;
 		y1 = 470;
 	} else {
-	for (int i = 0; i<3; i++) //jeœli odczyt poprawny, zapisujemy wartoœci z pliku do zmiennych
+	for (int i = 0; i<2; i++) //jeœli odczyt poprawny, zapisujemy wartoœci z pliku do zmiennych
 	{
 		fscanf_s(plik, "%d", &x);
 		zmienne[i] = x;
 	}
 	fclose(plik);
 
-	delay = zmienne[0];
-	x1 = zmienne[1];
-	y1 = zmienne[2];
+	x1 = zmienne[0];
+	y1 = zmienne[1];
 	}
 
 while(run == false) //jeœli zmienna run jest false czyli nie znaleziono jeszcze procesu HW to powtarzamy
@@ -50,16 +48,31 @@ while(run == false) //jeœli zmienna run jest false czyli nie znaleziono jeszcze 
 		{
 			if (_stricmp(entry.szExeFile, "Hauptwerk.exe") == 0) //jeœli znaleziono proces to true, odliczamy do klikania
 			{
-				Sleep(delay); //opóŸnienie klikania od uruchomienia siê procesu Hauptwerk.exe
+				//ten fragment pobiera rozdzielczoœæ ekranu
+				HWND window = GetDesktopWindow(); //pobieranie uchwytu ca³oœci widzianego pulpitu
+				RECT rectangle; //deklaracja zmiennej pod GetWindowRect
+				GetWindowRect(window, &rectangle); //u¿ycie funkcji GetWindowRect
+
+				int x_roz = rectangle.right - rectangle.left;
+				int y_roz = rectangle.bottom - rectangle.top;
 
 				HWND okno = FindWindowA(0, "Welcome to Hauptwerk"); // handler dla okna
 				RECT prostokat; //definicja typu prostok¹t dla wspó³rzêdnych uzyskiwanych przez GetWindowRect
 				GetWindowRect(okno, &prostokat); //zapisuje w prostokat parametry okna
 				int szerokosc = prostokat.left; //odleg³oœæ okna od lewej krawêdzi ekranu
 				int wysokosc = prostokat.top; //odleglosc okna od góry ekranu
+				while (abs(szerokosc) > x_roz || abs(wysokosc) > y_roz || szerokosc == 0 || wysokosc == 0)
+				{
+					okno = FindWindowA(0, "Welcome to Hauptwerk");
+					GetWindowRect(okno, &prostokat); //zapisuje w prostokat parametry okna
+					szerokosc = prostokat.left; //odleg³oœæ okna od lewej krawêdzi ekranu
+					wysokosc = prostokat.top; //odleglosc okna od góry ekranu
+
+					Sleep(100);
+				}
 
 				kliknij(szerokosc+x1, wysokosc+y1); //wykonujemy klikanie
-				CloseHandle(snapshot);
+
 				run = true; //proces znaleziony, zmienna zmienia wartoœæ
 				break; //wychodzimy z pêtli while (Process32Next...)
 			}
